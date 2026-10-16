@@ -1,5 +1,6 @@
 import { diffArrays } from "diff";
 import { writeFileSync } from "node:fs";
+import { dropAddedFinalPeriod } from "../src/final-period.ts";
 import { rewrite } from "../src/ollama.ts";
 import { FIX_SPELLING_AND_GRAMMAR } from "../src/prompts.ts";
 import * as sets from "./cases.mjs";
@@ -75,7 +76,9 @@ for (const model of models) {
   for (const [set, cases] of Object.entries(sets)) {
     for (const c of cases) {
       const t = performance.now();
-      const output = await rewrite(FIX_SPELLING_AND_GRAMMAR, c.input, model).catch((e) => `ERROR ${e.message}`);
+      const output = await rewrite(FIX_SPELLING_AND_GRAMMAR, c.input, model)
+        .then((fixed) => dropAddedFinalPeriod(c.input, fixed))
+        .catch((e) => `ERROR ${e.message}`);
       rows.push({
         model,
         set,

@@ -1,17 +1,6 @@
-import {
-  Action,
-  ActionPanel,
-  Clipboard,
-  Color,
-  Detail,
-  getPreferenceValues,
-  getSelectedText,
-  showToast,
-  Toast,
-} from "@raycast/api";
+import { Action, ActionPanel, Clipboard, Color, Detail, getSelectedText, showToast, Toast } from "@raycast/api";
 import { useEffect, useRef, useState } from "react";
 import { Change, escapeMarkdown, proofreadDiff } from "./diff-markdown";
-import { rewrite } from "./ollama";
 
 type Input = { text: string; fromClipboard: boolean };
 
@@ -21,14 +10,15 @@ async function getInput(): Promise<Input> {
   return { text: ((await Clipboard.readText()) ?? "").trim(), fromClipboard: true };
 }
 
+type Correct = (text: string) => Promise<string>;
+
 async function check(
-  prompt: string,
+  correct: Correct,
   unchanged: string,
-  model: string,
 ): Promise<{ fixed: string; markdown: string; changes: Change[] }> {
   const { text: input, fromClipboard } = await getInput();
   if (!input) throw new Error("Select some text or copy it to the clipboard first.");
-  const { text, markdown, changes } = proofreadDiff(input, await rewrite(prompt, input, model));
+  const { text, markdown, changes } = proofreadDiff(input, await correct(input));
   const body = text === input ? `✅ ${unchanged}\n\n${escapeMarkdown(text)}` : markdown;
   return { fixed: text, markdown: fromClipboard ? `_📋 From clipboard_\n\n${body}` : body, changes };
 }
@@ -38,10 +28,9 @@ function changeTag({ from, to }: Change, index: number) {
   return <Detail.Metadata.TagList.Item key={index} text={from ? `${from} → ${to}` : `+ ${to}`} color={Color.Green} />;
 }
 
-type Props = { prompt: string; unchanged: string; showChanges?: boolean };
+type Props = { correct: Correct; unchanged: string; showChanges?: boolean };
 
-export function RewriteView({ prompt, unchanged, showChanges = true }: Props) {
-  const { model } = getPreferenceValues<{ model: string }>();
+export function RewriteView({ correct, unchanged, showChanges = true }: Props) {
   const [markdown, setMarkdown] = useState("Checking…");
   const [fixed, setFixed] = useState("");
   const [changes, setChanges] = useState<Change[]>([]);
@@ -49,7 +38,7 @@ export function RewriteView({ prompt, unchanged, showChanges = true }: Props) {
   const run = useRef<ReturnType<typeof check>>(null);
 
   useEffect(() => {
-    run.current ??= check(prompt, unchanged, model);
+    run.current ??= check(correct, unchanged);
     run.current
       .then((result) => {
         setFixed(result.fixed);

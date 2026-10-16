@@ -1,14 +1,12 @@
-import { Clipboard, closeMainWindow, getPreferenceValues, getSelectedText, showHUD } from "@raycast/api";
+import { Clipboard, closeMainWindow, getSelectedText, showHUD } from "@raycast/api";
 import { proofreadDiff } from "./diff-markdown";
-import { rewrite } from "./ollama";
-import { FIX_SPELLING_AND_GRAMMAR } from "./prompts";
+import { fixSpellingAndGrammar } from "./proofread";
 
 const SLOW_MS = 1000;
 
 const plural = (n: number) => `${n} ${n === 1 ? "mistake" : "mistakes"}`;
 
 export default async function Command() {
-  const { model } = getPreferenceValues<{ model: string }>();
   const selected = await getSelectedText().catch(() => "");
   const [, before, input, after] = selected.match(/^(\s*)([\s\S]*?)(\s*)$/)!;
   if (!input) return showHUD("Select some text first");
@@ -16,7 +14,7 @@ export default async function Command() {
   await closeMainWindow();
   const slow = setTimeout(() => showHUD("Fixing…"), SLOW_MS);
   try {
-    const { text, changes } = proofreadDiff(input, await rewrite(FIX_SPELLING_AND_GRAMMAR, input, model));
+    const { text, changes } = proofreadDiff(input, await fixSpellingAndGrammar(input));
     clearTimeout(slow);
     if (text === input) return showHUD("✅ No mistakes found");
     await Clipboard.paste(before + text + after);

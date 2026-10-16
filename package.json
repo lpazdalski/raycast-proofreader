@@ -40,6 +40,15 @@
       "type": "textfield",
       "required": false,
       "default": "qwen3.6:35b"
+    },
+    {
+      "name": "noFinalPeriod",
+      "title": "Final Period",
+      "label": "Do not add a period at the end",
+      "description": "Fix Spelling and Grammar and Quick Fix do not add a period after the last sentence when your text has none",
+      "type": "checkbox",
+      "required": false,
+      "default": true
     }
   ],
   "tools": [],

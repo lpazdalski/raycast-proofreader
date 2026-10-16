@@ -1,6 +1,6 @@
-import { FIX_SPELLING_AND_GRAMMAR } from "./prompts";
+import { fixSpellingAndGrammar } from "./proofread";
 import { RewriteView } from "./rewrite-view";
 
 export default function Command() {
-  return <RewriteView prompt={FIX_SPELLING_AND_GRAMMAR} unchanged="No mistakes found." />;
+  return <RewriteView correct={fixSpellingAndGrammar} unchanged="No mistakes found." />;
 }

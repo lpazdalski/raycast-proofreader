@@ -20,6 +20,8 @@ Select text in any app and run **Quick Fix**. Proofreader replaces the selection
 
 Quick Fix only works on selected text; it does not fall back to the clipboard. It is meant to run from a hotkey.
 
+Fix Spelling and Grammar and Quick Fix do not add a period after the last sentence if your text has none. To get standard punctuation, clear **Do not add a period at the end** in Raycast Settings → Extensions → Proofreader.
+
 ## Rewrite in Simplified Technical English
 
 Select text and run **Rewrite in Simplified Technical English**. Proofreader rewrites it in [ASD-STE100 Simplified Technical English](https://www.asd-ste100.org) (STE) and shows the changes in the same view as **Fix Spelling and Grammar**, with the same clipboard fallback and actions.
