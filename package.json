@@ -18,6 +18,12 @@
       "title": "Fix Spelling and Grammar",
       "description": "Fix spelling and grammar of selected text",
       "mode": "view"
+    },
+    {
+      "name": "quick-fix",
+      "title": "Quick Fix",
+      "description": "Fix spelling and grammar of selected text and paste it back",
+      "mode": "no-view"
     }
   ],
   "preferences": [

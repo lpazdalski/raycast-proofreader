@@ -1,6 +1,8 @@
 # Proofreader
 
-A Raycast command that fixes spelling and grammar with a local AI model running in [Ollama](https://ollama.com). It is a free, private alternative to Raycast AI's "Fix Spelling and Grammar": your text never leaves your Mac.
+Raycast commands that fix spelling and grammar with a local AI model running in [Ollama](https://ollama.com). They are a free, private alternative to Raycast AI's "Fix Spelling and Grammar" and "Quick Fix": your text never leaves your Mac.
+
+## Fix Spelling and Grammar
 
 Select text in any app, run **Fix Spelling and Grammar**, and Proofreader shows only what changed:
 
@@ -11,6 +13,12 @@ Select text in any app, run **Fix Spelling and Grammar**, and Proofreader shows 
 Press <kbd>↵</kbd> to copy the corrected text, or <kbd>⌘</kbd><kbd>K</kbd> → **Paste Corrected Text**.
 
 If nothing is selected, Proofreader checks the clipboard text instead and marks the result with **📋 From clipboard**.
+
+## Quick Fix
+
+Select text in any app and run **Quick Fix**. Proofreader replaces the selection with the corrected text, without opening a window, and reports `✏️ Fixed 2 mistakes` or `✅ No mistakes found`. If the model takes longer than a second (for example while it loads), `Fixing…` is shown.
+
+Quick Fix only works on selected text; it does not fall back to the clipboard. It is meant to run from a hotkey.
 
 ## Requirements
 
@@ -34,7 +42,7 @@ If nothing is selected, Proofreader checks the clipboard text instead and marks 
    npm run dev
    ```
 
-3. In Raycast, search for **Fix Spelling and Grammar**. Assign a hotkey in Raycast Settings → Extensions → Proofreader.
+3. In Raycast, search for **Fix Spelling and Grammar** or **Quick Fix**. Assign hotkeys in Raycast Settings → Extensions → Proofreader.
 
 ## Choosing a model
 
@@ -54,6 +62,7 @@ On a Mac, pull `gemma4:e4b-it-qat`, not `gemma4:e4b`: the default tag downloads 
 
 | Message or symptom | Fix |
 |---|---|
+| `Select some text first` (Quick Fix) | The app did not report a selection. Select the text again, or use **Fix Spelling and Grammar**, which also reads the clipboard. |
 | `Start Ollama first` | Open the Ollama app. |
 | `Ollama error 404: model '…' not found` | Run `ollama pull <model>`, or fix the model name in the extension preferences. |
 | A correct sentence is shown as changed | Small models over-correct. Use a larger model from the table. |
@@ -62,9 +71,10 @@ On a Mac, pull `gemma4:e4b-it-qat`, not `gemma4:e4b`: the default tag downloads 
 
 ## How it works
 
-1. The command reads the selected text (or the clipboard).
+1. The command reads the selected text (Fix Spelling and Grammar falls back to the clipboard).
 2. It sends the text to Ollama at `http://localhost:11434/api/generate` with a minimal-edit prompt, `temperature: 0` and `think: false`.
-3. It compares the original and corrected text word by word (`src/diff-markdown.ts`) and renders the differences in a Raycast `Detail` view. Changes in quote style (`'` vs `’`) are not counted as edits.
+3. It compares the original and corrected text word by word (`src/diff-markdown.ts`). Changes in quote style (`'` vs `’`) are not counted as edits.
+4. Fix Spelling and Grammar renders the differences in a Raycast `Detail` view; Quick Fix pastes the corrected text over the selection, keeping its leading and trailing whitespace.
 
 The model only returns the corrected text; the highlighting is computed locally, so it is always accurate to what changed.
 
