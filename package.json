@@ -1,0 +1,55 @@
+{
+  "$schema": "https://www.raycast.com/schemas/extension.json",
+  "name": "proofreader",
+  "title": "Proofreader",
+  "description": "Fix spelling and grammar using a local AI model",
+  "icon": "proofreader-icon.png",
+  "author": "lukasz_pazdalski",
+  "platforms": [
+    "macOS"
+  ],
+  "categories": [
+    "Productivity"
+  ],
+  "license": "MIT",
+  "commands": [
+    {
+      "name": "fix-spelling-and-grammar",
+      "title": "Fix Spelling and Grammar",
+      "description": "Fix spelling and grammar of selected text",
+      "mode": "view"
+    }
+  ],
+  "preferences": [
+    {
+      "name": "model",
+      "title": "Ollama Model",
+      "description": "Ollama model to use",
+      "type": "textfield",
+      "required": false,
+      "default": "qwen3.6:35b"
+    }
+  ],
+  "tools": [],
+  "dependencies": {
+    "@raycast/api": "~2.7.3",
+    "@raycast/utils": "^2.2.7",
+    "diff": "^9.0.0"
+  },
+  "devDependencies": {
+    "@raycast/eslint-config": "^2.2.0",
+    "@types/node": "22.19.17",
+    "@types/react": "19.0.10",
+    "eslint": "^10.5.0",
+    "prettier": "^3.8.5",
+    "typescript": "^6.0.3"
+  },
+  "scripts": {
+    "build": "ray build",
+    "dev": "ray develop",
+    "fix-lint": "ray lint --fix",
+    "lint": "ray lint",
+    "prepublishOnly": "echo \"\\n\\nIt seems like you are trying to publish the Raycast extension to npm.\\n\\nIf you did intend to publish it to npm, remove the \\`prepublishOnly\\` script and rerun \\`npm publish\\` again.\\nIf you wanted to publish it to the Raycast Store instead, use \\`npm run publish\\` instead.\\n\\n\" && exit 1",
+    "publish": "npx @raycast/api@latest publish"
+  }
+}
