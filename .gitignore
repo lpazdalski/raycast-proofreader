@@ -15,3 +15,4 @@ compiled_raycast_rust
 
 # benchmark output
 bench/results.json
+mov/
