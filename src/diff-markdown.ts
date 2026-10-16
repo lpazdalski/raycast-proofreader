@@ -4,7 +4,39 @@ export type Change = { from: string; to: string };
 
 const GREEN = "#2ea043";
 const FONT_SIZE = 14;
-const CHAR_WIDTH = 8.2;
+const FALLBACK_CHAR_WIDTH = 8.2;
+
+// Advance widths of the macOS system font at FONT_SIZE, semibold, measured with AppKit and rounded to 0.5 px.
+// textLength stretches the glyphs to the image width, so a wrong width shows as spread-out or squeezed letters.
+const CHAR_WIDTHS = new Map<string, number>(
+  (
+    [
+      ["ijîï", 3.5],
+      ["Il|", 4],
+      ["!',./:;\\‘’ł", 4.5],
+      ["()[]frt{}", 5.5],
+      ["*-•", 6.5],
+      ["1`“”", 7],
+      ['"?sxzśźż', 7.5],
+      ["7FJLacekvyąćęŁéèêëàâäç", 8],
+      ["2E_ghnopqu–ńóĘôöùûüñÉ", 8.5],
+      ["#$+034569<=>PSTZ^bd~£ŚŹŻß", 9],
+      ["8BKRVY€", 9.5],
+      ["&ACDXĄĆÀÄ", 10],
+      ["GHNUŃÜ", 10.5],
+      ["OQÓÖ", 11],
+      ["w", 11.5],
+      ["Mm—…", 12.5],
+      ["@", 13],
+      ["%W", 14],
+    ] as const
+  ).flatMap(([chars, width]) => [...chars].map((c): [string, number] => [c, width])),
+);
+
+const charWidth = (c: string) =>
+  CHAR_WIDTHS.get(c) ?? (c.codePointAt(0)! > 0xffff ? FONT_SIZE * 1.25 : FALLBACK_CHAR_WIDTH);
+
+const textWidth = (word: string) => [...word].reduce((sum, c) => sum + charWidth(c), 0);
 
 const tokenize = (text: string) => text.split(/(\s+)/).filter(Boolean);
 
@@ -29,11 +61,11 @@ function descent(word: string): number {
 // Raycast sits an image's bottom edge on the text baseline, so any space below the glyphs lifts the word;
 // only words with descenders get that space.
 function greenWord(word: string): string {
-  const width = Math.ceil(word.length * CHAR_WIDTH) + 2;
+  const glyphs = textWidth(word);
   const svg =
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${ASCENT + descent(word)}">` +
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${Math.ceil(glyphs) + 2}" height="${ASCENT + descent(word)}">` +
     `<text x="1" y="${ASCENT}" font-family="-apple-system, system-ui, sans-serif" font-size="${FONT_SIZE}" ` +
-    `font-weight="600" fill="${GREEN}" textLength="${width - 2}" lengthAdjust="spacingAndGlyphs">${escapeXml(word)}</text></svg>`;
+    `font-weight="600" fill="${GREEN}" textLength="${glyphs}" lengthAdjust="spacingAndGlyphs">${escapeXml(word)}</text></svg>`;
   return `![](data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")})`;
 }
 
