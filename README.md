@@ -47,15 +47,17 @@ A local model does not know the STE dictionary of approved words, so the result 
    ollama pull gemma4:e4b-it-qat
    ```
 
-2. Install the dependencies and start the extension in development mode:
+2. Install the dependencies and add the extension to Raycast:
 
    ```bash
    npm install
    npm run dev
    ```
 
+   When the commands show in Raycast, stop `npm run dev` with <kbd>⌃</kbd><kbd>C</kbd>. The extension stays in Raycast; run `npm run dev` again only when you change the code.
+
 3. In Raycast, search for **Fix Spelling and Grammar**, **Quick Fix** or **Rewrite in Simplified Technical English**. The first time, Raycast asks for **Ollama Model**: enter the name of the model from step 1, as `ollama list` shows it.
-4. Assign hotkeys in Raycast Settings → Extensions → Proofreader.
+4. Optionally, assign hotkeys in Raycast Settings → Extensions → Proofreader.
 
 ## Choosing a model
 
