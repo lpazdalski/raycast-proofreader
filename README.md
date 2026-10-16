@@ -33,7 +33,7 @@ A local model does not know the STE dictionary of approved words, so the result 
 - macOS on Apple Silicon
 - [Raycast](https://raycast.com)
 - [Ollama](https://ollama.com/download) (the app starts its server at login)
-- Node.js 22 or newer
+- Node.js 22.6 or newer
 
 ## Setup
 
@@ -92,4 +92,8 @@ The model only returns the corrected text; the highlighting is computed locally,
 npm run dev     # run in Raycast with hot reload
 npm run lint    # ESLint + Prettier
 npm run build   # type-check and build
+npm test        # unit tests for the word diff
+npm run bench -- qwen3.6:35b gemma4:e4b-it-qat   # benchmark the prompt on local models
 ```
+
+The benchmark sends each sentence in `bench/cases.mjs` through the same request as the extension and prints a Markdown table. The raw answers go to `bench/results.json`.
