@@ -1,6 +1,7 @@
 import { Clipboard, closeMainWindow, getPreferenceValues, getSelectedText, showHUD } from "@raycast/api";
 import { proofreadDiff } from "./diff-markdown";
-import { fixText } from "./ollama";
+import { rewrite } from "./ollama";
+import { FIX_SPELLING_AND_GRAMMAR } from "./prompts";
 
 const SLOW_MS = 1000;
 
@@ -15,7 +16,7 @@ export default async function Command() {
   await closeMainWindow();
   const slow = setTimeout(() => showHUD("Fixing…"), SLOW_MS);
   try {
-    const { text, changes } = proofreadDiff(input, await fixText(input, model));
+    const { text, changes } = proofreadDiff(input, await rewrite(FIX_SPELLING_AND_GRAMMAR, input, model));
     clearTimeout(slow);
     if (text === input) return showHUD("✅ No mistakes found");
     await Clipboard.paste(before + text + after);

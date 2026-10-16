@@ -20,6 +20,12 @@
       "mode": "view"
     },
     {
+      "name": "simplified-technical-english",
+      "title": "Rewrite in Simplified Technical English",
+      "description": "Rewrite selected text in ASD-STE100 Simplified Technical English",
+      "mode": "view"
+    },
+    {
       "name": "quick-fix",
       "title": "Quick Fix",
       "description": "Fix spelling and grammar of selected text and paste it back",

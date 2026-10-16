@@ -1,6 +1,6 @@
 # Proofreader
 
-Raycast commands that fix spelling and grammar with a local AI model running in [Ollama](https://ollama.com). They are a free, private alternative to Raycast AI's "Fix Spelling and Grammar" and "Quick Fix": your text never leaves your Mac.
+Raycast commands that fix spelling and grammar, and rewrite text in Simplified Technical English, with a local AI model running in [Ollama](https://ollama.com). They are a free, private alternative to Raycast AI's "Fix Spelling and Grammar" and "Quick Fix": your text never leaves your Mac.
 
 ## Fix Spelling and Grammar
 
@@ -19,6 +19,14 @@ If nothing is selected, Proofreader checks the clipboard text instead and marks 
 Select text in any app and run **Quick Fix**. Proofreader replaces the selection with the corrected text, without opening a window, and reports `✏️ Fixed 2 mistakes` or `✅ No mistakes found`. If the model takes longer than a second (for example while it loads), `Fixing…` is shown.
 
 Quick Fix only works on selected text; it does not fall back to the clipboard. It is meant to run from a hotkey.
+
+## Rewrite in Simplified Technical English
+
+Select text and run **Rewrite in Simplified Technical English**. Proofreader rewrites it in [ASD-STE100 Simplified Technical English](https://www.asd-ste100.org) (STE) and shows the changes in the same view as **Fix Spelling and Grammar**, with the same clipboard fallback and actions.
+
+The prompt asks for the core STE rules: simple tenses, no `-ing` forms, phrasal verbs or contractions, the active voice, one topic and at most 20 words (instructions) or 25 words (descriptions) per sentence, commands for instructions, no noun groups longer than 3 words, no semicolons, no "e.g.", "i.e." or "etc.", and simple words ("use", not "utilize"). It also keeps the tense, the cause and condition words, technical names and `code` from the original.
+
+A local model does not know the STE dictionary of approved words, so the result is closer to STE, not certified STE. Small models also ignore some rules, most often the noun-group limit. Read the changes before you use the text.
 
 ## Requirements
 
@@ -42,7 +50,7 @@ Quick Fix only works on selected text; it does not fall back to the clipboard. I
    npm run dev
    ```
 
-3. In Raycast, search for **Fix Spelling and Grammar** or **Quick Fix**. Assign hotkeys in Raycast Settings → Extensions → Proofreader.
+3. In Raycast, search for **Fix Spelling and Grammar**, **Quick Fix** or **Rewrite in Simplified Technical English**. Assign hotkeys in Raycast Settings → Extensions → Proofreader.
 
 ## Choosing a model
 
@@ -71,10 +79,10 @@ On a Mac, pull `gemma4:e4b-it-qat`, not `gemma4:e4b`: the default tag downloads 
 
 ## How it works
 
-1. The command reads the selected text (Fix Spelling and Grammar falls back to the clipboard).
-2. It sends the text to Ollama at `http://localhost:11434/api/generate` with a minimal-edit prompt, `temperature: 0` and `think: false`.
+1. The command reads the selected text (the commands with a view fall back to the clipboard).
+2. It sends the text to Ollama at `http://localhost:11434/api/generate` with the command's prompt (`src/prompts.ts`), `temperature: 0` and `think: false`.
 3. It compares the original and corrected text word by word (`src/diff-markdown.ts`). Changes in quote style (`'` vs `’`) are not counted as edits.
-4. Fix Spelling and Grammar renders the differences in a Raycast `Detail` view; Quick Fix pastes the corrected text over the selection, keeping its leading and trailing whitespace.
+4. Fix Spelling and Grammar and Rewrite in Simplified Technical English render the differences in a Raycast `Detail` view; Quick Fix pastes the corrected text over the selection, keeping its leading and trailing whitespace.
 
 The model only returns the corrected text; the highlighting is computed locally, so it is always accurate to what changed.
 
