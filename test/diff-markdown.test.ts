@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { proofreadDiff } from "../src/diff-markdown.ts";
+import { isTooManyChanges, proofreadDiff } from "../src/diff-markdown.ts";
 
 const IMAGE = /!\[\]\(data:image\/svg\+xml;base64,([^)]+)\)/g;
 const withoutImages = (markdown: string) => markdown.replace(IMAGE, "<green>");
@@ -55,4 +55,45 @@ test("line breaks become markdown hard breaks", () => {
 
 test("green words are escaped for SVG", () => {
   assert.deepEqual(greenWords(proofreadDiff("a b", "a <b> & c").markdown), ["&lt;b&gt;", "&amp;", "c"]);
+});
+
+test("a sentence with many small fixes is not too many changes", () => {
+  const input = "Their going too the store tomorow, and they has alot of things to by.";
+  const fixed = "They're going to the store tomorrow, and they have a lot of things to buy.";
+  assert.equal(isTooManyChanges(input, fixed), false);
+});
+
+test("a dense proofread that splits words is not too many changes", () => {
+  const input = "This PR fix the bug where user cant login when there password contain special charakters.";
+  const fixed = "This PR fixes the bug where users can't log in when their password contains special characters.";
+  assert.equal(isTooManyChanges(input, fixed), false);
+});
+
+test("a short text with three fixed words is not too many changes", () => {
+  assert.equal(isTooManyChanges("i has alot", "I have a lot"), false);
+});
+
+test("a preamble before a short text is too many changes", () => {
+  assert.equal(isTooManyChanges("fix teh bug", "Here is the corrected text: fix the bug"), true);
+});
+
+test("an answer instead of the corrected question is too many changes", () => {
+  const input = "What is the diference between a list and a tuple in Python";
+  const fixed = "A list is mutable and a tuple is immutable, so you cannot change a tuple after you create it.";
+  assert.equal(isTooManyChanges(input, fixed), true);
+});
+
+test("a rewrite of every sentence is too many changes", () => {
+  const input = "We've utilized a caching layer in order to ensure that response times are being kept low.";
+  assert.equal(isTooManyChanges(input, "We used a cache to keep the response times low."), true);
+});
+
+test("a preamble before a long text is too many changes", () => {
+  const input =
+    "The deployment finished successfully and all health checks are green, so we can close the incident now.";
+  assert.equal(isTooManyChanges(input, `Here is the corrected text:\n\n${input}`), true);
+});
+
+test("quote style does not count as a change", () => {
+  assert.equal(isTooManyChanges("'a' 'b' 'c' 'd' 'e'", "‘a’ ‘b’ ‘c’ ‘d’ ‘e’"), false);
 });

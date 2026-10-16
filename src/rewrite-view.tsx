@@ -1,26 +1,43 @@
-import { Action, ActionPanel, Clipboard, Color, Detail, getSelectedText, showToast, Toast } from "@raycast/api";
+import {
+  Action,
+  ActionPanel,
+  Clipboard,
+  Color,
+  Detail,
+  getSelectedText,
+  Icon,
+  openExtensionPreferences,
+  showToast,
+  Toast,
+} from "@raycast/api";
 import { useEffect, useRef, useState } from "react";
-import { Change, escapeMarkdown, proofreadDiff } from "./diff-markdown";
+import { Change, plainMarkdown, proofreadDiff } from "./diff-markdown";
+import { Corrected } from "./proofread";
 
-type Input = { text: string; fromClipboard: boolean };
+type Correct = (text: string) => Promise<string>;
+type Result = Corrected & { diff: string; changes: Change[]; fromClipboard: boolean };
 
-async function getInput(): Promise<Input> {
+async function getInput(): Promise<{ text: string; fromClipboard: boolean }> {
   const selected = (await getSelectedText().catch(() => "")).trim();
   if (selected) return { text: selected, fromClipboard: false };
   return { text: ((await Clipboard.readText()) ?? "").trim(), fromClipboard: true };
 }
 
-type Correct = (text: string) => Promise<string>;
+function compare({ input, fixed, before, after }: Corrected, fromClipboard: boolean): Result {
+  const { text, markdown, changes } = proofreadDiff(input, fixed);
+  return { input, fixed: text, before, after, diff: markdown, changes, fromClipboard };
+}
 
-async function check(
-  correct: Correct,
-  unchanged: string,
-): Promise<{ fixed: string; markdown: string; changes: Change[] }> {
+async function check(correct: Correct, given?: Corrected): Promise<Result> {
+  if (given) return compare(given, false);
   const { text: input, fromClipboard } = await getInput();
   if (!input) throw new Error("Select some text or copy it to the clipboard first.");
-  const { text, markdown, changes } = proofreadDiff(input, await correct(input));
-  const body = text === input ? `✅ ${unchanged}\n\n${escapeMarkdown(text)}` : markdown;
-  return { fixed: text, markdown: fromClipboard ? `_📋 From clipboard_\n\n${body}` : body, changes };
+  return compare({ input, fixed: await correct(input), before: "", after: "" }, fromClipboard);
+}
+
+function body({ input, fixed, diff, fromClipboard }: Result, unchanged: string, showDiff: boolean): string {
+  const text = fixed === input ? `✅ ${unchanged}\n\n${plainMarkdown(fixed)}` : showDiff ? diff : plainMarkdown(fixed);
+  return fromClipboard ? `_📋 From clipboard_\n\n${text}` : text;
 }
 
 function changeTag({ from, to }: Change, index: number) {
@@ -28,49 +45,60 @@ function changeTag({ from, to }: Change, index: number) {
   return <Detail.Metadata.TagList.Item key={index} text={from ? `${from} → ${to}` : `+ ${to}`} color={Color.Green} />;
 }
 
-type Props = { correct: Correct; unchanged: string; showChanges?: boolean };
+type Props = { correct: Correct; unchanged: string; showChanges?: boolean; diffFirst?: boolean; given?: Corrected };
 
-export function RewriteView({ correct, unchanged, showChanges = true }: Props) {
-  const [markdown, setMarkdown] = useState("Checking…");
-  const [fixed, setFixed] = useState("");
-  const [changes, setChanges] = useState<Change[]>([]);
-  const [loading, setLoading] = useState(true);
-  const run = useRef<ReturnType<typeof check>>(null);
+export function RewriteView({ correct, unchanged, showChanges = true, diffFirst = true, given }: Props) {
+  const [result, setResult] = useState<Result>();
+  const [error, setError] = useState<string>();
+  const [showDiff, setShowDiff] = useState(diffFirst);
+  const run = useRef<Promise<Result>>(null);
 
   useEffect(() => {
-    run.current ??= check(correct, unchanged);
-    run.current
-      .then((result) => {
-        setFixed(result.fixed);
-        setMarkdown(result.markdown);
-        setChanges(result.changes);
-      })
-      .catch(async (e) => {
-        const msg = e instanceof Error ? e.message : String(e);
-        await showToast({ style: Toast.Style.Failure, title: "Failed", message: msg });
-        setMarkdown(`**Error:** ${msg}`);
-      })
-      .finally(() => setLoading(false));
+    run.current ??= check(correct, given);
+    run.current.then(setResult).catch(async (e) => {
+      const msg = e instanceof Error ? e.message : String(e);
+      await showToast({ style: Toast.Style.Failure, title: "Failed", message: msg });
+      setError(msg);
+    });
   }, []);
+
+  if (error) {
+    return (
+      <Detail
+        markdown={`**Error:** ${plainMarkdown(error)}`}
+        actions={
+          <ActionPanel>
+            <Action title="Open Extension Settings" icon={Icon.Gear} onAction={openExtensionPreferences} />
+          </ActionPanel>
+        }
+      />
+    );
+  }
+  if (!result) return <Detail isLoading markdown="Checking…" />;
 
   return (
     <Detail
-      isLoading={loading}
-      markdown={markdown}
+      markdown={body(result, unchanged, showDiff)}
       metadata={
-        showChanges && changes.length > 0 ? (
+        showChanges && result.changes.length > 0 ? (
           <Detail.Metadata>
-            <Detail.Metadata.TagList title="Changes">{changes.map(changeTag)}</Detail.Metadata.TagList>
+            <Detail.Metadata.TagList title="Changes">{result.changes.map(changeTag)}</Detail.Metadata.TagList>
           </Detail.Metadata>
         ) : undefined
       }
       actions={
-        fixed ? (
-          <ActionPanel>
-            <Action.CopyToClipboard title="Copy Corrected Text" content={fixed} />
-            <Action.Paste title="Paste Corrected Text" content={fixed} />
-          </ActionPanel>
-        ) : undefined
+        <ActionPanel>
+          <Action.CopyToClipboard title="Copy Corrected Text" content={result.fixed} />
+          <Action.Paste title="Paste Corrected Text" content={result.before + result.fixed + result.after} />
+          {result.fixed !== result.input && (
+            <Action
+              title={showDiff ? "Hide Changes" : "Show Changes"}
+              icon={Icon.Eye}
+              shortcut={{ modifiers: ["cmd"], key: "d" }}
+              onAction={() => setShowDiff(!showDiff)}
+            />
+          )}
+        </ActionPanel>
       }
     />
   );

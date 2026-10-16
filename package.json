@@ -36,10 +36,9 @@
     {
       "name": "model",
       "title": "Ollama Model",
-      "description": "Ollama model to use",
+      "description": "A model you downloaded with Ollama. Run \"ollama list\" in Terminal to see your models.",
       "type": "textfield",
-      "required": false,
-      "default": "qwen3.6:35b"
+      "required": true
     },
     {
       "name": "noFinalPeriod",

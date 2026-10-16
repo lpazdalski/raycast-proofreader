@@ -12,3 +12,5 @@ export async function fixSpellingAndGrammar(text: string): Promise<string> {
 export function rewriteInSimplifiedTechnicalEnglish(text: string): Promise<string> {
   return rewrite(SIMPLIFIED_TECHNICAL_ENGLISH, text, getPreferenceValues<Preferences>().model);
 }
+
+export type Corrected = { input: string; fixed: string; before: string; after: string };

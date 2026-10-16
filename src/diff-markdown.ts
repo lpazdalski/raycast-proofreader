@@ -42,12 +42,18 @@ const tokenize = (text: string) => text.split(/(\s+)/).filter(Boolean);
 
 const normalizeQuotes = (text: string) => text.replace(/[‘’ʼ]/g, "'").replace(/[“”]/g, '"');
 
+const sameWord = (a: string, b: string) => normalizeQuotes(a) === normalizeQuotes(b);
+
+const countWords = (tokens: string[]) => tokens.filter((token) => token.trim()).length;
+
 const escapeXml = (text: string) =>
   text.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" })[c]!);
 
-export function escapeMarkdown(text: string): string {
+function escapeMarkdown(text: string): string {
   return text.replace(/[\\`*_~[\]#<>|]/g, "\\$&");
 }
+
+export const plainMarkdown = (text: string) => escapeMarkdown(text).replace(/\n/g, "  \n");
 
 const ASCENT = Math.round(FONT_SIZE * 1.05);
 
@@ -91,9 +97,7 @@ function markRemoved(value: string): string {
 // original's quotes are kept in the corrected text.
 export function proofreadDiff(original: string, fixed: string): { text: string; markdown: string; changes: Change[] } {
   const originalTokens = tokenize(original);
-  const parts = diffArrays(originalTokens, tokenize(fixed), {
-    comparator: (a, b) => normalizeQuotes(a) === normalizeQuotes(b),
-  });
+  const parts = diffArrays(originalTokens, tokenize(fixed), { comparator: sameWord });
 
   let text = "";
   let markdown = "";
@@ -125,4 +129,21 @@ export function proofreadDiff(original: string, fixed: string): { text: string; 
   }
   flush();
   return { text, markdown: markdown.replace(/\n/g, "  \n"), changes };
+}
+
+const MIN_SUSPICIOUS_WORDS = 5;
+
+// A rewrite or an answer replaces most of the original words; a preamble adds words and removes none.
+// Fixes such as "alot" → "a lot" add words, so added words alone do not measure the size of a proofread.
+export function isTooManyChanges(original: string, fixed: string): boolean {
+  const originalTokens = tokenize(original);
+  const parts = diffArrays(originalTokens, tokenize(fixed), { comparator: sameWord });
+  let removed = 0;
+  let added = 0;
+  for (const part of parts) {
+    if (part.removed) removed += countWords(part.value);
+    if (part.added) added += countWords(part.value);
+  }
+  const replacedMost = removed >= MIN_SUSPICIOUS_WORDS && removed > countWords(originalTokens) / 2;
+  return replacedMost || added - removed >= MIN_SUSPICIOUS_WORDS;
 }

@@ -7,6 +7,7 @@ export default function Command() {
       correct={rewriteInSimplifiedTechnicalEnglish}
       unchanged="The text already follows STE."
       showChanges={false}
+      diffFirst={false}
     />
   );
 }
